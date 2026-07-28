@@ -3,16 +3,33 @@
 ## APIs Endpoints, Request and Response Details
 
 ### Authentication APIs
-- register 
+- POST /auth/register 
 ```json
 {
-    "name": "Krish",
-    "email": "krish@example.com"
+    "username": "harmin",
+    "firstname": "Harmin",
+    "lastname": "Vekariya",
+    "phone": "8200571458",
+    "email": "vekariyaharmin96@gmail.com",
+    "password": "harmin@123"
 }
 ```
 
 - login 
+- POST /auth/login
+```json
+{
+    "email": "harmin@example.com", 
+    "password": "password123"
+}
+```
+
 - forget password
+```json
+{
+    "email": "harmin@example.com"
+}
+```
 - change password
 - reset password
 - logout
