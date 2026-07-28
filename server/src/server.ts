@@ -11,7 +11,6 @@ import helmet from "helmet";
 import compression from "compression";
 const app = express();
 
-app.use(routes);
 
 /* CORS - Cross Origin Resource Sharing, before the CORS browser only allowed SOP (Same Origin Policy where attacker can steal your data)
 * Origin Contain three things: 
@@ -26,7 +25,7 @@ app.use(cors({
     credentials: true, // allow cookies
     methods: ["GET", "POST", "PUT", "DELETE"], // olny allow this requests
     allowedHeaders: [
-        'Content-Type', 'Authorizationn' 
+        'Content-Type'
     ], 
     maxAge: 86400
 }));
@@ -55,6 +54,9 @@ app.get('/health', (req:Request, res: Response)=>{
     res.send('I am Harmin, who is testing this API');
 })
 
+// API endpoints 
+app.use(routes);
+
 app.use(
     '/api-docs',
     swaggerui.serve,
@@ -64,4 +66,3 @@ app.use(
 app.listen(process.env.PORT, ()=> {
     console.log('server is running');
 })
-
