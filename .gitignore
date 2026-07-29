@@ -1,3 +1,7 @@
+# Temp files
+lesson.md
+test.js
+
 # Logs
 logs
 *.log
@@ -143,5 +147,3 @@ vite.config.ts.timestamp-*
 .vite/
 
 
-# Temp files
-lesson.md
