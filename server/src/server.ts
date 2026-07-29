@@ -9,8 +9,8 @@ import cors from 'cors';
 import morgan from 'morgan';
 import helmet from "helmet";
 import compression from "compression";
-const app = express();
 
+const app = express();
 
 /* CORS - Cross Origin Resource Sharing, before the CORS browser only allowed SOP (Same Origin Policy where attacker can steal your data)
 * Origin Contain three things: 
