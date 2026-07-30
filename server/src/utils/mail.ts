@@ -10,14 +10,16 @@ const transport = nodemailer.createTransport({
   },
 });
 
-export default async function sendregistationmail() {
+
+export default async function send_register_mail(email:String): Promise<void> {
   await transport.sendMail({
-    to: "harminv251@gmail.com",
-    from: "vekariyaharmin96@gmail.com",
+    from: "Harminvp00",
+    to: email,
     subject: "Hello, this is just testing mail from harminv00",
 
     html: `
-        <h1> Hello this is just a testing mail, do not response, website testing </h1>
+        <h1> Data </h1>
+        <p> New user created with mail id: ${email} </p>
     `,
   });
 }
