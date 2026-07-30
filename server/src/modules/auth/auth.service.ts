@@ -105,8 +105,7 @@ export const registerUser = async (payload: RegisterUserInput): Promise<Response
       data: safeUser
     };
 
-  } catch (error: unknown) {
-    console.error(error.name);
+  } catch (error:any) {
     return {
       success: false,
       message: error.message,
