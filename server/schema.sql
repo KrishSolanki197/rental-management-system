@@ -1,104 +1,106 @@
 
-create TABLE roles (
-    role_id serial primary key,
-    role_name VARCHAR(20) not null unique
+CREATE TABLE roles (
+    role_id serial PRIMARY KEY,
+    role_name VARCHAR(20) NOT NULL UNIQUE
 )
 
-insert into roles (role_name) values 
-    ('Admin'),
-    ('User'),
-    ('Manager'),
-    ('Vendor');
+INSERT INTO roles (role_name) VALUES 
+    ('admin'),
+    ('user'),
+    ('manager'),
+    ('vendor');
 
-create type providers as enum(
+CREATE TYPE providers AS ENUM(
     'local', 'google'
 ) 
 
-create type u_status as enum (
-    'active', 'inactive', 'suspend'
+CREATE TYPE u_status AS ENUM (
+    'active', 'inactive', 'suspended'
 )
 
-create table users(
-    userId bigserial primary key,
-    username varchar(100) unique not null,
-    email varchar(100) unique not null,
-    password_hash TEXT not null,
-    phone_no varchar(20),
-    provider providers not null default 'local',
-    provider_user_id varchar(100) default null,
-    user_status u_status default 'active',
-    email_verified boolean not null default FALSE,
-    last_login_at timestamp, 
-    failed_login_attemp smallint default 0,
-    created_at timestamp default now(),
-    updated_at timestamp default now()
+CREATE TYPE otp_purpose AS ENUM (
+    'login', 'password_reset', 'email_verification'
 )
 
-create type otp_purpose as enum (
-    'login', 'reset password', 'email verify'
+CREATE TYPE genders AS ENUM (
+    'male', 'female', 'others', 'not specified'
 )
 
-create table user_otp (
-    otp_id bigserial primary key,
-    userId bigint references users(userId) not null,
-    otp_code char(6) not null,
-    purpose otp_purpose not null, 
-    expireAt timestamp not null,
-    used_at timestamp,
-    created_at timestamp default now()
+CREATE table users(
+    user_id BIGSERIAL PRIMARY KEY,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash TEXT,
+    phone_no VARCHAR(20),
+    provider providers NOT NULL DEFAULT 'local',
+    provider_user_id VARCHAR(100) DEFAULT NULL,
+    user_status u_status DEFAULT 'active',
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    last_login_at TIMESTAMPTZ, 
+    failed_login_attempts SMALLINT DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+)
+
+
+CREATE table user_otp (
+    otp_id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(user_id) NOT NULL ON DELETE CASCADE,
+    otp_code char(6) NOT NULL,
+    purpose otp_purpose NOT NULL, 
+    expire_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT now()
 )   
 
-create type genders as enum (
-    'male', 'female', 'others', 'Not Specified Yet'
+CREATE table user_roles (
+    user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,    
+    role_id int REFERENCES roles(role_id) ON DELETE CASCADE,
+    PRIMARY KEY(user_id, role_id)
 )
 
-create table user_roles (
-    userId bigint references users(userId) on delete cascade,    
-    roleId int references roles(role_id) on delete cascade,
-    primary key(userId, roleId)
-)
 
-create table profiles (
-    profile_id bigserial primary key,
-    userId bigint unique references users(userId),
-    firstName varchar(50) not null,
-    lastname varchar(50) not null,
+CREATE table profiles (
+    profile_id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT UNIQUE NOT NULL REFERENCES users(user_id),
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
     date_of_birth date,
-    gender genders default 'Not Specified Yet',
-    profile_image_url TEXT default null,
-    bio varchar(150),
-    created_at timestamp default now(),
-    updated_at timestamp default now()
+    gender genders DEFAULT 'not specified',
+    profile_image_url TEXT DEFAULT NULL,
+    bio VARCHAR(150),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
 )
 
 
-create table customers (
-    customerId bigserial primary key not null,
-    userId bigint unique references users(userId) on delete cascade,
-    created_at timestamp default now(),
-    updated_at timestamp default now()
+CREATE table customers (
+    customer_id BIGSERIAL PRIMARY KEY NOT NULL,
+    user_id BIGINT UNIQUE REFERENCES users(user_id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
 )
 
-create table addresses (
-    address_id bigserial primary key,
-    customerId bigint not null references customers(customerId) on delete cascade,
-    city varchar(100) not null,
-    street_name varchar(100) not null,
-    landmark varchar(100) not null,
-    postal_code varchar(10) not null,
-    state varchar(50) not null,
-    country varchar(100) not null,
-    active_address boolean not null default FALSE,
-    created_at timestamp default now(),
-    updated_at timestamp default now()
+CREATE table addresses (
+    address_id BIGSERIAL PRIMARY KEY,
+    customer_id BIGINT NOT NULL REFERENCES customers(customer_id) ON DELETE CASCADE,
+    city VARCHAR(100) NOT NULL,
+    street_name VARCHAR(100) NOT NULL,
+    landmark VARCHAR(100) NOT NULL,
+    postal_code VARCHAR(10) NOT NULL,
+    state VARCHAR(50) NOT NULL,
+    country VARCHAR(100) NOT NULL,
+    active_address BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
 )
 
 CREATE INDEX idx_profiles_user
-ON profiles(userId);
+ON profiles(user_id);
 
 CREATE INDEX idx_customers_user
-ON customers(userId);
+ON customers(user_id);
 
 CREATE INDEX idx_addresses_customer
-ON addresses(customerId);
+ON addresses(customer_id);
 
