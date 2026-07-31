@@ -1,8 +1,7 @@
-
 CREATE TABLE roles (
     role_id serial PRIMARY KEY,
     role_name VARCHAR(20) NOT NULL UNIQUE
-)
+);
 
 INSERT INTO roles (role_name) VALUES 
     ('admin'),
@@ -12,19 +11,19 @@ INSERT INTO roles (role_name) VALUES
 
 CREATE TYPE providers AS ENUM(
     'local', 'google'
-) 
+);
 
 CREATE TYPE u_status AS ENUM (
     'active', 'inactive', 'suspended'
-)
+);
 
 CREATE TYPE otp_purpose AS ENUM (
     'login', 'password_reset', 'email_verification'
-)
+);
 
 CREATE TYPE genders AS ENUM (
     'male', 'female', 'others', 'not specified'
-)
+);
 
 CREATE table users(
     user_id BIGSERIAL PRIMARY KEY,
@@ -40,23 +39,23 @@ CREATE table users(
     failed_login_attempts SMALLINT DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
-)
+);
 
 CREATE table user_otp (
     otp_id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT REFERENCES users(user_id) NOT NULL ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,    
     otp_code char(6) NOT NULL,
     purpose otp_purpose NOT NULL, 
     expire_at TIMESTAMPTZ NOT NULL,
     used_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT now()
-)   
+);  
 
 CREATE table user_roles (
     user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,    
     role_id int REFERENCES roles(role_id) ON DELETE CASCADE,
     PRIMARY KEY(user_id, role_id)
-)
+);
 
 CREATE table profiles (
     profile_id BIGSERIAL PRIMARY KEY,
@@ -69,14 +68,14 @@ CREATE table profiles (
     bio VARCHAR(150),
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
-)
+);
 
 CREATE table customers (
     customer_id BIGSERIAL PRIMARY KEY NOT NULL,
     user_id BIGINT UNIQUE REFERENCES users(user_id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
-)
+);
 
 CREATE table addresses (
     address_id BIGSERIAL PRIMARY KEY,
@@ -90,7 +89,7 @@ CREATE table addresses (
     active_address BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
-)
+);
 
 CREATE INDEX idx_profiles_user
 ON profiles(user_id);

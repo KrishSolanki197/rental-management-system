@@ -1,30 +1,68 @@
+import type { Request, Response, NextFunction } from "express";
+import { registrationUser } from "./auth.validation.js";
+import {
+  registerUser,
+  UserNameAlreadyExist,
+  EmailAlreadyExist,
+  DefaultRoleNotFound,
+} from "./auth.service.js";
+import { success } from "zod";
+import { error } from "node:console";
 
-import type { Request, Response } from "express";
-import * as authService from './auth.service.js';
-import type { RegisterUserInput } from "../../types/User.js";
-import type { ResponseType } from "../../types/ResponseType.js";
+export async function register(
+  err: unknown,
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const validationResults = registrationUser.safeParse(req.body);
 
-export const register = async (req: Request, res: Response): Promise<void>  => {
-
-  // format the payload before send to the service layer 
-  const payload:RegisterUserInput = { 
-    username: req.body.username.toLowerCase().trim(), 
-    firstname: req.body.firstname.toLowerCase().trim(), 
-    lastname: req.body.lastname.trim().toLowerCase(), 
-    phone: req.body.phone.trim(), 
-    email: req.body.email.trim().toLowerCase(), 
-    password: req.body.password.toLowerCase().trim() 
-  };
-
-  const result = await authService.registerUser(payload);
-
-  if(result.success){
-    res.status(200).send(result)
+  if (!validationResults.success) {
+    res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors: validationResults.error.flatten().fieldErrors,
+    });
+    return;
   }
 
-  res.status(400).send(result);
-};
+  try {
+    const registeredUser = await registerUser(validationResults.data);
 
-export const login = async (req: Request, res: Response) => {
-  res.status(200).send("Hello this is login API endpoint");
-};
+    res.status(201).json({
+      success: true,
+      message: "User registred successfully",
+      data: registeredUser,
+    });
+
+    res.status(201).json({
+      success: true,
+    });
+  } catch (error: unknown) {
+    // username not exits
+    if (error instanceof UserNameAlreadyExist) {
+      res.status(409).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    // email is not exists
+    if (error instanceof EmailAlreadyExist) {
+      res.status(409).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    // role not exist
+    if (error instanceof DefaultRoleNotFound) {
+      res.status(409).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    next(error);
+  }
+}
