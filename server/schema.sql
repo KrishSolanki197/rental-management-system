@@ -42,7 +42,6 @@ CREATE table users(
     updated_at TIMESTAMPTZ DEFAULT now()
 )
 
-
 CREATE table user_otp (
     otp_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(user_id) NOT NULL ON DELETE CASCADE,
@@ -59,7 +58,6 @@ CREATE table user_roles (
     PRIMARY KEY(user_id, role_id)
 )
 
-
 CREATE table profiles (
     profile_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT UNIQUE NOT NULL REFERENCES users(user_id),
@@ -72,7 +70,6 @@ CREATE table profiles (
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 )
-
 
 CREATE table customers (
     customer_id BIGSERIAL PRIMARY KEY NOT NULL,
@@ -103,4 +100,3 @@ ON customers(user_id);
 
 CREATE INDEX idx_addresses_customer
 ON addresses(customer_id);
-

@@ -1,16 +1,17 @@
 
-import express from "express";
+import express from "express"
+import type { Request, Response, NextFunction, Express } from "express";
 import 'dotenv/config';
 import routes from "./routes/index.js";
 import swaggerui from 'swagger-ui-express';
 import { swaggerSpec } from "./swagger.js";
-import type { Request, Response } from "express";
 import cors from 'cors';
 import morgan from 'morgan';
 import helmet from "helmet";
 import compression from "compression";
+import { success } from "zod";
 
-const app = express();
+const app:Express = express();
 
 /* CORS - Cross Origin Resource Sharing, before the CORS browser only allowed SOP (Same Origin Policy where attacker can steal your data)
 * Origin Contain three things: 
@@ -56,6 +57,18 @@ app.get('/health', (req:Request, res: Response)=>{
 
 // API endpoints 
 app.use(routes);
+
+app.use(
+    (err:unknown, req:Request, res:Response, next:NextFunction)=>{
+        console.log("there is an error occurs in internal server", err);
+
+        res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+        });
+    }
+);
+
 
 app.use(
     '/api-docs',
