@@ -36,7 +36,7 @@ export const registrationUser = z.object({
         .min(3, 'first name is required')
         .max(20, 'first name is too long'),
     
-    last_time: z
+    last_name: z
         .string("last name is invalid")
         .min(3, 'last name is required')
         .max(20, 'lsdt name is too long'),

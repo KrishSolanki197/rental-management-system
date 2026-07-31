@@ -7,230 +7,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model audit_logs {
-  audit_log_id BigInt    @id @default(autoincrement())
-  table_name   String?   @db.VarChar(100)
-  record_id    BigInt?
-  action       String?   @db.VarChar(20)
-  old_data     Json?
-  new_data     Json?
-  changed_at   DateTime? @default(now()) @db.Timestamptz(6)
-}
-
-model categories {
-  category_id   Int        @id @default(autoincrement())
-  category_name String     @unique @db.VarChar(100)
-  products      products[]
-}
-
-model customer_addresses {
-  address_id   BigInt     @id @default(autoincrement())
-  customer_id  BigInt?
-  address_line String?
-  city         String?    @db.VarChar(100)
-  state        String?    @db.VarChar(100)
-  country      String?    @db.VarChar(100)
-  postal_code  String?    @db.VarChar(20)
-  customers    customers? @relation(fields: [customer_id], references: [customer_id], onDelete: Cascade, onUpdate: NoAction)
-}
-
 model customers {
-  customer_id        BigInt               @id @default(autoincrement())
-  user_id            BigInt?              @unique
-  first_name         String?              @db.VarChar(100)
-  last_name          String?              @db.VarChar(100)
-  phone              String?              @db.VarChar(20)
-  created_at         DateTime?            @default(now()) @db.Timestamptz(6)
-  customer_addresses customer_addresses[]
-  users              users?               @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
-  quotations         quotations[]
-  rental_orders      rental_orders[]
-}
+  customer_id BigInt      @id @default(autoincrement())
+  user_id     BigInt?     @unique
+  created_at  DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?   @default(now()) @db.Timestamptz(6)
+  addresses   addresses[]
+  users       users?      @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
 
-model inventory_assets {
-  asset_id           BigInt               @id @default(autoincrement())
-  product_id         BigInt?
-  serial_number      String?              @unique @db.VarChar(100)
-  qr_code            String?              @unique @db.VarChar(100)
-  status             String?              @default("available") @db.VarChar(30)
-  products           products?            @relation(fields: [product_id], references: [product_id], onDelete: Cascade, onUpdate: NoAction)
-  rental_order_items rental_order_items[]
-
-  @@index([status], map: "idx_assets_status")
-}
-
-model late_fee_rules {
-  rule_id          Int      @id @default(autoincrement())
-  calculation_unit String?  @db.VarChar(20)
-  rate             Decimal? @db.Decimal(10, 2)
-  grace_minutes    Int?     @default(0)
-  maximum_fee      Decimal? @db.Decimal(10, 2)
-}
-
-model oauth_accounts {
-  oauth_account_id BigInt    @id @default(autoincrement())
-  user_id          BigInt?
-  provider         String    @db.VarChar(30)
-  provider_user_id String    @db.VarChar(255)
-  provider_email   String?   @db.VarChar(255)
-  access_token     String?
-  refresh_token    String?
-  token_expires_at DateTime? @db.Timestamptz(6)
-  provider_data    Json?
-  users            users?    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@unique([provider, provider_user_id])
-}
-
-model payments {
-  payment_id      BigInt               @id @default(autoincrement())
-  rental_order_id BigInt?
-  amount          Decimal?             @db.Decimal(10, 2)
-  payment_method  String?              @db.VarChar(50)
-  status          payment_status_enum? @default(pending)
-  paid_at         DateTime?            @db.Timestamptz(6)
-  rental_orders   rental_orders?       @relation(fields: [rental_order_id], references: [rental_order_id], onDelete: NoAction, onUpdate: NoAction)
-  refunds         refunds[]
-}
-
-model permissions {
-  permission_id    Int                @id @default(autoincrement())
-  permission_name  String             @unique @db.VarChar(100)
-  role_permissions role_permissions[]
-}
-
-model price_lists {
-  price_list_id  Int              @id @default(autoincrement())
-  name           String?          @db.VarChar(100)
-  effective_from DateTime?        @db.Date
-  effective_to   DateTime?        @db.Date
-  product_prices product_prices[]
-}
-
-model product_prices {
-  product_price_id BigInt       @id @default(autoincrement())
-  product_id       BigInt?
-  price_list_id    Int?
-  rental_period    String?      @db.VarChar(20)
-  rate             Decimal?     @db.Decimal(10, 2)
-  price_lists      price_lists? @relation(fields: [price_list_id], references: [price_list_id], onDelete: NoAction, onUpdate: NoAction)
-  products         products?    @relation(fields: [product_id], references: [product_id], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model products {
-  product_id       BigInt             @id @default(autoincrement())
-  category_id      Int?
-  sku              String?            @unique @db.VarChar(60)
-  product_name     String             @db.VarChar(200)
-  description      String?
-  replacement_cost Decimal?           @db.Decimal(10, 2)
-  created_at       DateTime?          @default(now()) @db.Timestamptz(6)
-  inventory_assets inventory_assets[]
-  product_prices   product_prices[]
-  categories       categories?        @relation(fields: [category_id], references: [category_id], onDelete: NoAction, onUpdate: NoAction)
-  quotation_items  quotation_items[]
-
-  @@index([sku], map: "idx_products_sku")
-}
-
-model quotation_items {
-  quotation_item_id BigInt      @id @default(autoincrement())
-  quotation_id      BigInt?
-  product_id        BigInt?
-  quantity          Int?
-  rate              Decimal?    @db.Decimal(10, 2)
-  products          products?   @relation(fields: [product_id], references: [product_id], onDelete: NoAction, onUpdate: NoAction)
-  quotations        quotations? @relation(fields: [quotation_id], references: [quotation_id], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model quotations {
-  quotation_id    BigInt            @id @default(autoincrement())
-  customer_id     BigInt?
-  valid_until     DateTime?         @db.Date
-  status          String?           @db.VarChar(20)
-  quotation_items quotation_items[]
-  customers       customers?        @relation(fields: [customer_id], references: [customer_id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model refunds {
-  refund_id   BigInt    @id @default(autoincrement())
-  payment_id  BigInt?
-  amount      Decimal?  @db.Decimal(10, 2)
-  refunded_at DateTime? @default(now()) @db.Timestamptz(6)
-  payments    payments? @relation(fields: [payment_id], references: [payment_id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model rental_order_items {
-  rental_order_item_id BigInt            @id @default(autoincrement())
-  rental_order_id      BigInt?
-  asset_id             BigInt?
-  rate                 Decimal?          @db.Decimal(10, 2)
-  inventory_assets     inventory_assets? @relation(fields: [asset_id], references: [asset_id], onDelete: NoAction, onUpdate: NoAction)
-  rental_orders        rental_orders?    @relation(fields: [rental_order_id], references: [rental_order_id], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model rental_orders {
-  rental_order_id    BigInt               @id @default(autoincrement())
-  customer_id        BigInt?
-  status             rental_status_enum?  @default(draft)
-  rental_start       DateTime?            @db.Timestamptz(6)
-  rental_end         DateTime?            @db.Timestamptz(6)
-  total_amount       Decimal?             @db.Decimal(10, 2)
-  created_at         DateTime?            @default(now()) @db.Timestamptz(6)
-  payments           payments[]
-  rental_order_items rental_order_items[]
-  customers          customers?           @relation(fields: [customer_id], references: [customer_id], onDelete: NoAction, onUpdate: NoAction)
-  returns            returns[]
-  security_deposits  security_deposits?
-
-  @@index([customer_id], map: "idx_rental_customer")
-}
-
-model returns {
-  return_id       BigInt         @id @default(autoincrement())
-  rental_order_id BigInt?
-  returned_at     DateTime?      @db.Timestamptz(6)
-  late_fee        Decimal?       @db.Decimal(10, 2)
-  damage_fee      Decimal?       @db.Decimal(10, 2)
-  remarks         String?
-  rental_orders   rental_orders? @relation(fields: [rental_order_id], references: [rental_order_id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model role_permissions {
-  role_id       Int
-  permission_id Int
-  permissions   permissions @relation(fields: [permission_id], references: [permission_id], onDelete: Cascade, onUpdate: NoAction)
-  roles         roles       @relation(fields: [role_id], references: [role_id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@id([role_id, permission_id])
+  @@index([user_id], map: "idx_customers_user")
 }
 
 model roles {
-  role_id          Int                @id @default(autoincrement())
-  role_name        String             @unique @db.VarChar(50)
-  role_permissions role_permissions[]
-  user_roles       user_roles[]
-}
-
-model security_deposits {
-  deposit_id       BigInt               @id @default(autoincrement())
-  rental_order_id  BigInt?              @unique
-  deposit_amount   Decimal?             @db.Decimal(10, 2)
-  deduction_amount Decimal?             @default(0) @db.Decimal(10, 2)
-  refund_amount    Decimal?             @db.Decimal(10, 2)
-  status           deposit_status_enum? @default(held)
-  rental_orders    rental_orders?       @relation(fields: [rental_order_id], references: [rental_order_id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model sessions {
-  session_id    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id       BigInt?
-  ip_address    String?   @db.Inet
-  user_agent    String?
-  last_activity DateTime? @default(now()) @db.Timestamptz(6)
-  expires_at    DateTime  @db.Timestamptz(6)
-  revoked_at    DateTime? @db.Timestamptz(6)
-  users         users?    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+  role_id    Int          @id @default(autoincrement())
+  role_name  String       @unique @db.VarChar(20)
+  user_roles user_roles[]
 }
 
 model user_roles {
@@ -243,49 +34,88 @@ model user_roles {
 }
 
 model users {
-  user_id            BigInt            @id @default(autoincrement())
-  username           String            @unique @db.VarChar(50)
-  email              String            @unique @db.VarChar(150)
-  phone              String?           @db.VarChar(20)
-  password_hash      String
-  profile_image      String?
-  email_verified     Boolean?          @default(false)
-  status             user_status_enum? @default(active)
-  failed_login_count Int?              @default(0) @db.SmallInt
-  last_login_at      DateTime?         @db.Timestamptz(6)
-  created_at         DateTime?         @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime?         @default(now()) @db.Timestamptz(6)
-  customers          customers?
-  oauth_accounts     oauth_accounts[]
-  sessions           sessions[]
-  user_roles         user_roles[]
-
-  @@index([email], map: "idx_users_email")
+  user_id               BigInt       @id @default(autoincrement())
+  username              String       @unique @db.VarChar(100)
+  email                 String       @unique @db.VarChar(100)
+  password_hash         String?
+  phone_no              String?      @db.VarChar(20)
+  provider              providers    @default(local)
+  provider_user_id      String?      @db.VarChar(100)
+  user_status           u_status?    @default(active)
+  email_verified        Boolean      @default(false)
+  last_login_at         DateTime?    @db.Timestamptz(6)
+  failed_login_attempts Int?         @default(0) @db.SmallInt
+  created_at            DateTime?    @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?    @default(now()) @db.Timestamptz(6)
+  customers             customers?
+  profiles              profiles?
+  user_otp              user_otp[]
+  user_roles            user_roles[]
 }
 
-enum deposit_status_enum {
-  held
-  partial_refund
-  refunded
-  forfeited
+model addresses {
+  address_id     BigInt    @id @default(autoincrement())
+  customer_id    BigInt
+  city           String    @db.VarChar(100)
+  street_name    String    @db.VarChar(100)
+  landmark       String    @db.VarChar(100)
+  postal_code    String    @db.VarChar(10)
+  state          String    @db.VarChar(50)
+  country        String    @db.VarChar(100)
+  active_address Boolean   @default(false)
+  created_at     DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime? @default(now()) @db.Timestamptz(6)
+  customers      customers @relation(fields: [customer_id], references: [customer_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([customer_id], map: "idx_addresses_customer")
 }
 
-enum payment_status_enum {
-  pending
-  paid
-  failed
-  refunded
+model profiles {
+  profile_id        BigInt    @id @default(autoincrement())
+  user_id           BigInt    @unique
+  first_name        String    @db.VarChar(50)
+  last_name         String    @db.VarChar(50)
+  date_of_birth     DateTime? @db.Date
+  gender            genders?  @default(not_specified)
+  profile_image_url String?
+  bio               String?   @db.VarChar(150)
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+  users             users     @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_profiles_user")
 }
 
-enum rental_status_enum {
-  draft
-  confirmed
-  active
-  completed
-  cancelled
+model user_otp {
+  otp_id     BigInt      @id @default(autoincrement())
+  user_id    BigInt
+  otp_code   String      @db.Char(6)
+  purpose    otp_purpose
+  expire_at  DateTime    @db.Timestamptz(6)
+  used_at    DateTime?   @db.Timestamptz(6)
+  created_at DateTime?   @default(now()) @db.Timestamptz(6)
+  users      users       @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
 }
 
-enum user_status_enum {
+enum genders {
+  male
+  female
+  others
+  not_specified @map("not specified")
+}
+
+enum otp_purpose {
+  login
+  password_reset
+  email_verification
+}
+
+enum providers {
+  local
+  google
+}
+
+enum u_status {
   active
   inactive
   suspended
