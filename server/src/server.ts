@@ -2,14 +2,14 @@
 import express from "express"
 import type { Request, Response, NextFunction, Express } from "express";
 import 'dotenv/config';
-import routes from "./routes/index.js";
+import mainRouter from "./routes/index.js";
+import authRoute from "./modules/auth/auth.routes.js";
 import swaggerui from 'swagger-ui-express';
 import { swaggerSpec } from "./swagger.js";
 import cors from 'cors';
 import morgan from 'morgan';
 import helmet from "helmet";
 import compression from "compression";
-import { success } from "zod";
 
 const app:Express = express();
 
@@ -31,7 +31,6 @@ app.use(cors({
     maxAge: 86400
 }));
 
-
 app.use(express.json({
     limit: '1024kb', // No one can send data more than 1 MB because of the limit 
     strict: true, // only json body and array are accepted
@@ -41,7 +40,8 @@ app.use(express.json({
 // Logs HTTP requests 
 app.use(morgan('dev'));
 
-// compress all the response before sending them to the client, benifits are fast loading and fast sending
+/* compress all the response before sending them to the client, 
+benifits are fast loading and fast sending */
 app.use(compression());
 
 // It helps protect against attacks like:
@@ -56,7 +56,7 @@ app.get('/health', (req:Request, res: Response)=>{
 })
 
 // API endpoints 
-app.use(routes);
+app.use(mainRouter);
 
 app.use(
     (err:unknown, req:Request, res:Response, next:NextFunction)=>{

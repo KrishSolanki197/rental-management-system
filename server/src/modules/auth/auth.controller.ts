@@ -1,16 +1,13 @@
 import type { Request, Response, NextFunction } from "express";
-import { registrationUser } from "./auth.validation.js";
+import { registrationUser, type RegisterInput } from "./auth.validation.js";
 import {
   registerUser,
   UserNameAlreadyExist,
   EmailAlreadyExist,
   DefaultRoleNotFound,
 } from "./auth.service.js";
-import { success } from "zod";
-import { error } from "node:console";
 
 export async function register(
-  err: unknown,
   req: Request,
   res: Response,
   next: NextFunction,
@@ -29,15 +26,15 @@ export async function register(
   try {
     const registeredUser = await registerUser(validationResults.data);
 
-    res.status(201).json({
-      success: true,
-      message: "User registred successfully",
-      data: registeredUser,
-    });
+    console.dir(registeredUser, { depth: null });
 
     res.status(201).json({
       success: true,
+      message: "User registred successfully",
+      data: registeredUser
     });
+
+    res.send('done')
   } catch (error: unknown) {
     // username not exits
     if (error instanceof UserNameAlreadyExist) {
