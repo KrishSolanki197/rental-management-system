@@ -3,8 +3,10 @@ import { registrationUser, type RegisterInput } from "./auth.validation.js";
 import {
   registerUser,
   UserNameAlreadyExist,
-  EmailAlreadyExist,
+  EmailExistance,
   DefaultRoleNotFound,
+  loginUser,
+  WrongCrendential,
 } from "./auth.service.js";
 
 export async function register(
@@ -24,17 +26,15 @@ export async function register(
   }
 
   try {
-    const registeredUser = await registerUser(validationResults.data);
+    const registered_user = await registerUser(validationResults.data);
 
-    console.dir(registeredUser, { depth: null });
 
     res.status(201).json({
       success: true,
       message: "User registred successfully",
-      data: registeredUser
+      data: registered_user,
     });
 
-    res.send('done')
   } catch (error: unknown) {
     // username not exits
     if (error instanceof UserNameAlreadyExist) {
@@ -45,7 +45,7 @@ export async function register(
     }
 
     // email is not exists
-    if (error instanceof EmailAlreadyExist) {
+    if (error instanceof EmailExistance) {
       res.status(409).json({
         success: false,
         message: error.message,
@@ -61,5 +61,40 @@ export async function register(
     }
 
     next(error);
+  }
+}
+
+export async function login(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+
+  try {
+    const logged_user = await loginUser(req.body);
+
+    console.log(logged_user)
+    res.status(200).json({
+      success: true,
+      message: "login successfully",
+      data: logged_user
+    })
+
+  } catch (error: unknown) {
+    if (error instanceof EmailExistance) {
+      res.status(404).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    if (error instanceof WrongCrendential) {
+      res.status(401).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    next(error)
   }
 }
