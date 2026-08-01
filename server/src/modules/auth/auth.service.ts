@@ -1,9 +1,8 @@
-import { string, success, unknown } from "zod";
 import prisma from "../../config/prisma.js";
 import type { RegisterInput, loginInput } from "./auth.validation.js";
 import bcrypt from "bcrypt";
-import { registerAlert, 
-  loginAlert} from "../../utils/mail.js";
+import { generateToken } from "../../utils/token.js";
+import type { users } from "@prisma/client";
 
 export class UserNameAlreadyExist extends Error {
   constructor() {
@@ -32,18 +31,15 @@ export class WrongCrendential extends Error {
     this.name = "WrongCrendential";
   }
 }
-
-export interface userResponse {
-  user_id: bigint;
-  username: string;
-  email: string;
-}
-
 const DEFAULT_ROLE_NAME = "user";
 
-export async function registerUser(
-  input: RegisterInput,
-): Promise<userResponse | unknown> {
+// Omit <Type, Keys> & { New Type of Keys }
+export type registerUserResponse = Omit<users, "user_id" | "password_hash"> & {
+  user_id: string
+}
+
+// register user
+export async function registerUser(input: RegisterInput): Promise<registerUserResponse> {
   const { username, email, password, first_name, last_name } = input;
 
   const usernameExists = await prisma.users.findUnique({
@@ -113,17 +109,23 @@ export async function registerUser(
 
     const { password_hash: string, ...safe_user } = user;
 
-    await registerAlert(safe_user.email, first_name, last_name);
     return {
       ...safe_user,
       user_id: safe_user.user_id.toString(),
     };
-  } catch (error: unknown) {
-    return error;
+  } catch (error) {
+    throw error;
   }
 }
 
-export async function loginUser(input: loginInput): Promise<userResponse | unknown> {
+// Omit <Type, Keys> & { New Type of Keys }
+export type loginUserReponse = Omit<users, "user_id" | "password_hash"> & {
+  user_id: string;
+  token: string;
+};
+
+// login user
+export async function loginUser(input: loginInput): Promise<loginUserReponse> {
   try {
     const { email, password } = input;
     const emailExists = await prisma.users.findFirst({
@@ -156,15 +158,20 @@ export async function loginUser(input: loginInput): Promise<userResponse | unkno
       },
     });
 
-    await loginAlert(user.email, user.username);
+    const token = await generateToken(
+      user.user_id.toString(),
+      user.username,
+      user.email,
+    );
 
-    const { password_hash: string, ...safeUser } = user;
+    const { password_hash, ...safeUser } = user;
 
     return {
       ...safeUser,
-      user_id: safeUser.user_id.toString()
+      user_id: safeUser.user_id.toString(),
+      token,
     };
-  } catch (error: unknown) {
-    return error;
+  } catch (error) {
+    throw error;
   }
 }
