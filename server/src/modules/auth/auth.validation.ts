@@ -1,8 +1,6 @@
 
 
-import strict from 'node:assert/strict';
-import { string, z } from 'zod';
-import { required } from 'zod/mini';
+import { z } from 'zod';
 
 // Regex explanations kept close to the rule they enforce, for learning purposes.
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/; // letters, numbers, underscore only
@@ -42,5 +40,19 @@ export const registrationUser = z.object({
         .max(20, 'lsdt name is too long'),
 })
  
+export const loginSchema = z.object({
+    email: z
+        .string("email is invalid")
+        .email("invalid email address"),
+    
+    password: z
+        .string('password is invalid')
+        .min(8, 'password should be atleast 8 characters')
+        .regex(PASSWORD_LOWERCASE_REGEX, 'password must contain atleast one lowercase letter')
+        .regex(PASSWORD_UPPERCASE_REGEX, 'password must contain atleast one uppercase letter')
+        .regex(PASSWORD_NUMBER_REGEX, 'password must contain atleast one number')
+        .regex(PASSWORD_SPECIAL_CHAR_REGEX, 'password must contain atleast one special character'),
+})
 
 export type RegisterInput = z.infer<typeof registrationUser>;
+export type loginInput = z.infer<typeof loginSchema>;
