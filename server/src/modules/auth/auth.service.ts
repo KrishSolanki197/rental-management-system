@@ -106,7 +106,10 @@ export async function registerUser(
     });
 
     const { password_hash:string, ...safe_user } = user;
-    return safe_user;
+    return {
+      ...safe_user, 
+      user_id: safe_user.user_id.toString()
+    };
 
   } catch (error: unknown) {
     return error;
