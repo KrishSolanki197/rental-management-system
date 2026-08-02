@@ -3,6 +3,7 @@ import type { RegisterInput, loginInput } from "./auth.validation.js";
 import bcrypt from "bcrypt";
 import { generateToken } from "../../utils/token.js";
 import type { users } from "@prisma/client";
+import { OTPEmail } from "../../utils/mail.js";
 
 export class UserNameAlreadyExist extends Error {
   constructor() {
@@ -11,8 +12,15 @@ export class UserNameAlreadyExist extends Error {
   }
 }
 
+export class UserNotFound extends Error{
+  constructor(){
+    super("User not found");
+    this.name = "UserNotFound";
+  }
+}
+
 export class EmailExistance extends Error {
-  constructor(message = "Email is already exists") {
+  constructor(message = "Email already exists") {
     super(message);
     this.name = "EmailExistances";
   }
@@ -120,7 +128,7 @@ export async function registerUser(input: RegisterInput): Promise<registerUserRe
 
 // Omit <Type, Keys> & { New Type of Keys }
 export type loginUserReponse = Omit<users, "user_id" | "password_hash"> & {
-  user_id: string;
+  user_id: string | bigint;
   token: string;
 };
 
@@ -174,4 +182,44 @@ export async function loginUser(input: loginInput): Promise<loginUserReponse> {
   } catch (error) {
     throw error;
   }
+}
+
+
+export async function forgetPassword(email: string): Promise<string> {
+  /* One Transaction to do the all task
+     1. Check Email already exists?
+     2. Store OTP into the user table 
+     3. Send the OTP into the email
+     4. Send the response
+  */
+  const user = prisma.$transaction(async (tx):Promise<users> =>{
+
+    // Veify the user existance into the database and select user_id for further use 
+    const _user_record = await tx.users.findUnique({
+      where: {
+        email
+      }
+    });
+
+    // throw an error if user not exits
+    if(!_user_record) throw new UserNotFound();
+    
+    // OTP Generate and Store to the database
+    const otp_code:string = (100000 + Math.random() * 900000).toString();
+    await tx.user_otp.create({
+      data:{
+        user_id: _user_record?.user_id,
+        otp_code: otp_code,
+        purpose: "email_verification",
+        used_at: null,
+        expire_at: new Date(Date.now() + 10 * 60 * 1000)
+      }
+    });  
+    return _user_record;  
+  })
+
+ 
+  console.log(user)
+
+  return "check console"
 }

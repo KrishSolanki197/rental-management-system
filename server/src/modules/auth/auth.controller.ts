@@ -7,9 +7,11 @@ import {
   DefaultRoleNotFound,
   loginUser,
   WrongCrendential,
+  forgetPassword,
 } from "./auth.service.js";
 import { AuthEmailAlert } from "../../utils/mail.js";
 
+// the register fucntion used to define the user into the database
 export async function register(
   req: Request,
   res: Response,
@@ -70,6 +72,7 @@ export async function register(
   }
 }
 
+// the login function is used retrive user info only if when the user enter correct credential with the user
 export async function login(
   req: Request,
   res: Response,
@@ -87,7 +90,7 @@ export async function login(
     }
 
     const logged_user = await loginUser(validationResults.data);
-    
+
     const content = `<p> Our system recieve login request from your email address <b> "${logged_user.email}" </b>, if your do that then you can safely ignore this email, In case <mark> if you didn't know about the login activity, </mark> then reset your password or contact to our helpline for help. <br />        <br/> </p>`;
     await AuthEmailAlert(
       logged_user.email,
@@ -95,7 +98,7 @@ export async function login(
       "Login Alert from RentPe",
       content,
     );
-    
+
     const token: string = logged_user.token;
 
     res.cookie("token", token, {
@@ -125,5 +128,24 @@ export async function login(
     }
 
     return next(error);
+  }
+}
+
+export async function forget(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const { email } = req.body;
+  try {
+    if (!email) {
+      res.send("email is invalid");
+    }
+
+    const result = await forgetPassword(email);
+    res.status(200).send(result);
+
+  } catch (err) {
+    res.send(err)
   }
 }
