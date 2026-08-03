@@ -12,15 +12,15 @@ export class UserNameAlreadyExist extends Error {
   }
 }
 
-export class UserNotFound extends Error{
-  constructor(){
+export class UserNotFound extends Error {
+  constructor() {
     super("User not found");
     this.name = "UserNotFound";
   }
 }
 
 export class EmailExistance extends Error {
-  constructor(message = "Email already exists") {
+  constructor(message:string = "Email already exists") {
     super(message);
     this.name = "EmailExistances";
   }
@@ -39,15 +39,25 @@ export class WrongCrendential extends Error {
     this.name = "WrongCrendential";
   }
 }
+
+export class UnableToCreateOTP extends Error{
+  constructor(message:string = "Fail to generate OTP"){
+    super(message);
+    this.name = "OTPNotCreated";
+  }
+}
+
 const DEFAULT_ROLE_NAME = "user";
 
 // Omit <Type, Keys> & { New Type of Keys }
 export type registerUserResponse = Omit<users, "user_id" | "password_hash"> & {
-  user_id: string
-}
+  user_id: string;
+};
 
 // register user
-export async function registerUser(input: RegisterInput): Promise<registerUserResponse> {
+export async function registerUser(
+  input: RegisterInput,
+): Promise<registerUserResponse> {
   const { username, email, password, first_name, last_name } = input;
 
   const usernameExists = await prisma.users.findUnique({
@@ -185,41 +195,57 @@ export async function loginUser(input: loginInput): Promise<loginUserReponse> {
 }
 
 
-export async function forgetPassword(email: string): Promise<string> {
+export async function forgetPassword(
+  email: string,
+): Promise<{email: string}> {
   /* One Transaction to do the all task
      1. Check Email already exists?
      2. Store OTP into the user table 
      3. Send the OTP into the email
      4. Send the response
   */
-  const user = prisma.$transaction(async (tx):Promise<users> =>{
-
-    // Veify the user existance into the database and select user_id for further use 
+  const user = await prisma.$transaction(async (tx): Promise<users> => {
+    // Veify the user existance into the database and select user_id for further use
     const _user_record = await tx.users.findUnique({
       where: {
-        email
-      }
+        email,
+      },
     });
-
+    
     // throw an error if user not exits
-    if(!_user_record) throw new UserNotFound();
+    if (!_user_record) throw new UserNotFound();
     
     // OTP Generate and Store to the database
-    const otp_code:string = (100000 + Math.random() * 900000).toString();
+    const otp_code: string = Math.floor(
+      100000 + Math.random() * 900000,
+    ).toString();
+    
+    // create otp rows for the user
     await tx.user_otp.create({
-      data:{
+      data: {
         user_id: _user_record?.user_id,
         otp_code: otp_code,
         purpose: "email_verification",
         used_at: null,
-        expire_at: new Date(Date.now() + 10 * 60 * 1000)
-      }
-    });  
-    return _user_record;  
-  })
+        expire_at: new Date(Date.now() + 10 * 60 * 1000),
+      },
+    });
+    
+    await OTPEmail(
+      _user_record.username,
+      _user_record.email,
+      otp_code,
+      "OTP Verifications Email"
+    );
 
- 
-  console.log(user)
+    return _user_record;
+  });
 
-  return "check console"
+  if(!user){
+    throw new UnableToCreateOTP();
+  }
+
+  return {
+    email: user.email,
+  };
 }

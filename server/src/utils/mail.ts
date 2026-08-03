@@ -85,7 +85,7 @@ export async function OTPEmail(
         <br> <br>
         OTP code:
         <div style="">
-          <p style="background: whitesmoke; width: 100px; font-size: 30px; text-align:center; padding: 10px 15px; border-radius: 10px; box-shadow: 0 0 1px #000;">
+          <p style="background: whitesmoke; width: 150px; font-size: 30px; text-align:center; padding: 10px 15px; border-radius: 10px; box-shadow: 0 0 1px #000;">
             <b>
               ${otp}
             </b>
