@@ -1,51 +1,23 @@
 import prisma from "../../config/prisma.js";
-import type { RegisterInput, loginInput } from "./auth.validation.js";
+import type {
+  RegisterInput,
+  loginInput,
+  emailInput,
+  passwordInput,
+} from "./auth.validation.js";
 import bcrypt from "bcrypt";
 import { generateToken } from "../../utils/token.js";
 import type { users } from "@prisma/client";
 import { OTPEmail } from "../../utils/mail.js";
-
-export class UserNameAlreadyExist extends Error {
-  constructor() {
-    super("Username is already exists");
-    this.name = "UserNameAlreadyExist";
-  }
-}
-
-export class UserNotFound extends Error {
-  constructor() {
-    super("User not found");
-    this.name = "UserNotFound";
-  }
-}
-
-export class EmailExistance extends Error {
-  constructor(message:string = "Email already exists") {
-    super(message);
-    this.name = "EmailExistances";
-  }
-}
-
-export class DefaultRoleNotFound extends Error {
-  constructor() {
-    super("default role 'user' is not configured");
-    this.name = "DefaultRoleNotFound";
-  }
-}
-
-export class WrongCrendential extends Error {
-  constructor() {
-    super("incorrect password");
-    this.name = "WrongCrendential";
-  }
-}
-
-export class UnableToCreateOTP extends Error{
-  constructor(message:string = "Fail to generate OTP"){
-    super(message);
-    this.name = "OTPNotCreated";
-  }
-}
+import {
+  UserNameAlreadyExist,
+  UserNotFound,
+  EmailExistance,
+  DefaultRoleNotFound,
+  WrongCrendential,
+  UnableToCreateOTP,
+  PasswordNotFound
+} from "./auth.errors.js";
 
 const DEFAULT_ROLE_NAME = "user";
 
@@ -194,16 +166,15 @@ export async function loginUser(input: loginInput): Promise<loginUserReponse> {
   }
 }
 
-
-export async function forgetPassword(
-  email: string,
-): Promise<{email: string}> {
-  /* One Transaction to do the all task
+/* One Transaction to do the all task
      1. Check Email already exists?
      2. Store OTP into the user table 
      3. Send the OTP into the email
      4. Send the response
   */
+export async function forgetPassword(
+  email: emailInput,
+): Promise<{ email: string }> {
   const user = await prisma.$transaction(async (tx): Promise<users> => {
     // Veify the user existance into the database and select user_id for further use
     const _user_record = await tx.users.findUnique({
@@ -211,15 +182,15 @@ export async function forgetPassword(
         email,
       },
     });
-    
+
     // throw an error if user not exits
     if (!_user_record) throw new UserNotFound();
-    
+
     // OTP Generate and Store to the database
     const otp_code: string = Math.floor(
       100000 + Math.random() * 900000,
     ).toString();
-    
+
     // create otp rows for the user
     await tx.user_otp.create({
       data: {
@@ -230,22 +201,66 @@ export async function forgetPassword(
         expire_at: new Date(Date.now() + 10 * 60 * 1000),
       },
     });
-    
+
     await OTPEmail(
       _user_record.username,
       _user_record.email,
       otp_code,
-      "OTP Verifications Email"
+      "OTP Verifications Email",
     );
 
     return _user_record;
   });
 
-  if(!user){
+  if (!user) {
     throw new UnableToCreateOTP();
   }
 
   return {
     email: user.email,
   };
+}
+
+/**
+ * get a token (verify middlewares)
+ * get old and new pass (verify zod)
+ * get a user based on token (findUnique)
+ * compare password_hash is same as req.body.old_password (bcrypt.compare)
+ * if old password is correct set new_password's hash as current password
+ * return acknowledement
+ */
+
+export async function changePassword(
+  passwords: passwordInput,
+): Promise<string> {
+
+  // getting the passwords 
+  const { old_password, new_password } = passwords;
+  if(!old_password) throw new PasswordNotFound('Old password is missing');
+  if(!new_password) throw new PasswordNotFound('New password is missing');
+
+  const old_password_hash = await bcrypt.hash(old_password, 10);
+  const response = await prisma.$transaction(async (tx)=>{
+
+    const user = await tx.users.findFirst({
+      where:{
+        password_hash: old_password_hash
+      },
+      select:{
+        user_id: true,
+        password_hash: true
+      }
+    });
+
+    
+    if(user != null){
+      const match_password = await bcrypt.compare(old_password, user.password_hash);
+    }
+
+
+
+
+  })
+
+  return "the password are changed";
 }
