@@ -1,22 +1,29 @@
 import type { Request, Response, NextFunction } from "express";
+
 import {
   registrationUser,
   loginSchema,
-  EmailSchema,
+  emailValidation,
+  passwordSchema,
 } from "./auth.validation.js";
+
 import {
   registerUser,
-  UserNameAlreadyExist,
-  UnableToCreateOTP,
-  EmailExistance,
-  DefaultRoleNotFound,
   loginUser,
-  WrongCrendential,
   forgetPassword,
-  UserNotFound,
+  changePassword
 } from "./auth.service.js";
 
-import { AuthEmailAlert } from "../../utils/mail.js";
+import {
+  UserNameAlreadyExist,
+  UserNotFound,
+  EmailExistance,
+  DefaultRoleNotFound,
+  WrongCrendential,
+  UnableToCreateOTP
+} from './auth.errors.js';
+
+import { AuthEmailAlert, OTPEmail } from "../../utils/mail.js";
 
 // the register fucntion used to define the user into the database
 export async function register(
@@ -145,50 +152,82 @@ export async function forget(
 ): Promise<Response> {
   const { email } = req.body;
   try {
+    const validateEmail = emailValidation.safeParse(req.body.email);
 
-    
-    const validateEmail = EmailSchema.safeParse(req.body);
-    
-    // verify the email address 
+    // verify the email address
     if (validateEmail.success === false) {
       return res.status(400).json({
         success: false,
-        message: "Email Validation failed"
+        message: "Email Validation failed",
       });
     }
 
-    // send result back to the users 
+    // send result back to the users
     const result = await forgetPassword(email);
     return res.status(200).json({
       status: true,
       message: "OTP has sended to the registered email account",
-      data: result
+      data: result,
     });
-
   } catch (err) {
-
-    // UserNotFound 
-    if(err instanceof UserNotFound){
+    // UserNotFound
+    if (err instanceof UserNotFound) {
       return res.status(400).json({
         status: false,
-        message: 'user is not found'
-      })
+        message: "user is not found",
+      });
     }
 
     // UnableToCreateOTP
-    if(err instanceof UnableToCreateOTP){
+    if (err instanceof UnableToCreateOTP) {
       res.status(400).json({
         status: false,
-        message: "unable to send otp now try later"
-      })
+        message: "unable to send otp now try later",
+      });
     }
 
     // the universal error
     return res.status(400).json({
       status: false,
       message: "internal server problem",
-      data: null
+      data: null,
+    });
+  }
+}
+
+//  the change password
+export async function change(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<Response> {
+  try {
+
+    // received the data req.body
+    const passwordValidations = passwordSchema.safeParse(req.body);
+
+    if(!passwordValidations.success){
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        error: passwordValidations.error.flatten().fieldErrors
+      })
+    }
+    // calling the service function changePassword to change the password of the user 
+    const response = await changePassword(passwordValidations.data);
+
+    // the function have Response return type
+    return res.status(200).json({
+      success: true,
+      message: response
     })
-    
+
+
+  } catch (err) {
+    // Handle thrown Error by the Service layers
+    return res.status(400).json({
+      success: false,
+      message: "Internal Server Error",
+    });
   }
 }

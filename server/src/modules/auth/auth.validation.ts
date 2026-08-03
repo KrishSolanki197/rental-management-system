@@ -55,13 +55,35 @@ export const loginSchema = z.object({
 })
 
 
-export const EmailSchema = z.object({
-    email: z
-        .string()
-        .email('email is invalid')
-})
+export const emailValidation = z
+    .string()
+    .trim()
+    .email()
+    .transform((email)=> email.toLowerCase())
 
+export const passwordSchema = z.object({
+    old_password: z
+        .string('password is invalid')
+        .min(8, 'password should be atleast 8 characters')
+        .regex(PASSWORD_LOWERCASE_REGEX, 'password must contain atleast one lowercase letter')
+        .regex(PASSWORD_UPPERCASE_REGEX, 'password must contain atleast one uppercase letter')
+        .regex(PASSWORD_NUMBER_REGEX, 'password must contain atleast one number')
+        .regex(PASSWORD_SPECIAL_CHAR_REGEX, 'password must contain atleast one special character'),
+
+    new_password: z
+        .string('password is invalid')
+        .min(8, 'password should be atleast 8 characters')
+        .regex(PASSWORD_LOWERCASE_REGEX, 'password must contain atleast one lowercase letter')
+        .regex(PASSWORD_UPPERCASE_REGEX, 'password must contain atleast one uppercase letter')
+        .regex(PASSWORD_NUMBER_REGEX, 'password must contain atleast one number')
+        .regex(PASSWORD_SPECIAL_CHAR_REGEX, 'password must contain atleast one special character'),
+}).refine((data)=> data.old_password !== data.new_password, {
+    message: "new password must be diffrent from the old password",
+    path: ['new_password']
+});
 
 
 export type RegisterInput = z.infer<typeof registrationUser>;
 export type loginInput = z.infer<typeof loginSchema>;
+export type emailInput = z.infer<typeof emailValidation>
+export type passwordInput = z.infer<typeof passwordSchema>;
