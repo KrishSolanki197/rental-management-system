@@ -1,14 +1,21 @@
 import type { Request, Response, NextFunction } from "express";
-import { registrationUser, loginSchema } from "./auth.validation.js";
+import {
+  registrationUser,
+  loginSchema,
+  EmailSchema,
+} from "./auth.validation.js";
 import {
   registerUser,
   UserNameAlreadyExist,
+  UnableToCreateOTP,
   EmailExistance,
   DefaultRoleNotFound,
   loginUser,
   WrongCrendential,
   forgetPassword,
+  UserNotFound,
 } from "./auth.service.js";
+
 import { AuthEmailAlert } from "../../utils/mail.js";
 
 // the register fucntion used to define the user into the database
@@ -135,17 +142,53 @@ export async function forget(
   req: Request,
   res: Response,
   next: NextFunction,
-): Promise<void> {
+): Promise<Response> {
   const { email } = req.body;
   try {
-    if (!email) {
-      res.send("email is invalid");
+
+    
+    const validateEmail = EmailSchema.safeParse(req.body);
+    
+    // verify the email address 
+    if (validateEmail.success === false) {
+      return res.status(400).json({
+        success: false,
+        message: "Email Validation failed"
+      });
     }
 
+    // send result back to the users 
     const result = await forgetPassword(email);
-    res.status(200).send(result);
+    return res.status(200).json({
+      status: true,
+      message: "OTP has sended to the registered email account",
+      data: result
+    });
 
   } catch (err) {
-    res.send(err)
+
+    // UserNotFound 
+    if(err instanceof UserNotFound){
+      return res.status(400).json({
+        status: false,
+        message: 'user is not found'
+      })
+    }
+
+    // UnableToCreateOTP
+    if(err instanceof UnableToCreateOTP){
+      res.status(400).json({
+        status: false,
+        message: "unable to send otp now try later"
+      })
+    }
+
+    // the universal error
+    return res.status(400).json({
+      status: false,
+      message: "internal server problem",
+      data: null
+    })
+    
   }
 }
