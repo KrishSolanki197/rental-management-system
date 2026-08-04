@@ -10,6 +10,7 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "target": "esnext",
+    "typeRoots": ["./src/types", "./node_modules/@types"],
     "types": [],
     // For nodejs:
     // "lib": ["esnext"],
@@ -41,5 +42,6 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-  }
+  },
+  "include": ["./src/**/*.ts", "src/types/**/*.d.ts"]
 }

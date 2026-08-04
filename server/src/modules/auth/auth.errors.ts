@@ -48,3 +48,10 @@ export class PasswordNotFound extends Error{
         this.name = "PasswordNotFound";
     }
 }
+
+export class JWTNotFound extends Error{
+  constructor(message:string){
+    super(message);
+    this.name = "JWTNotFound";
+  }
+}
