@@ -242,9 +242,10 @@ export async function changePassword(
   const old_password_hash = await bcrypt.hash(old_password, 10);
   const response = await prisma.$transaction(async (tx)=>{
 
+    // finding the user based on the
     const user = await tx.users.findFirst({
       where:{
-        password_hash: old_password_hash
+        user_id: 1
       },
       select:{
         user_id: true,
@@ -253,9 +254,7 @@ export async function changePassword(
     });
 
     
-    if(user != null){
-      const match_password = await bcrypt.compare(old_password, user.password_hash);
-    }
+
 
 
 
