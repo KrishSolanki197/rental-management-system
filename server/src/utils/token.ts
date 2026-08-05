@@ -1,6 +1,7 @@
 // json web token
 import jwt from "jsonwebtoken";
 import "dotenv/config";
+import type {AuthUser} from '../types/auth.js';
 
 // Secret Not Found
 export class SecretNotFound extends Error {
@@ -17,13 +18,6 @@ export class TokenNotCreate extends Error {
   }
 }
 
-// This is interface to define type of the payload given to the generateJWT function
-interface userPayload {
-  user_id: string;
-  username: string;
-  email: string;
-}
-
 const secret: string | undefined = process.env.JWT_SECRET_KEY;
 
 // To genarate new token
@@ -34,7 +28,7 @@ export function generateToken(
 ): string {
 
   // user payload type checking
-  const payload: userPayload = {
+  const payload: AuthUser = {
     user_id,
     username,
     email,
@@ -44,20 +38,17 @@ export function generateToken(
     throw new SecretNotFound();
   }
 
-  const token: string | undefined = jwt.sign(payload, secret, {
+  return jwt.sign(payload, secret, {
     expiresIn: "7d",
   });
-  if (token === undefined) {
-    throw new TokenNotCreate();
-  }
-  return token;
-}
+  
+} 
 
-export function verifyToken(token: string): userPayload {
-    if (secret === undefined) {
+export function verifyToken(token: string): AuthUser {
+    if (!secret) {
       throw new SecretNotFound("Token is expired");
     }
-    return jwt.verify(token, secret) as userPayload;
+    return jwt.verify(token, secret) as AuthUser;
 }
 
 

@@ -214,6 +214,7 @@ export async function change(
         error: passwordValidations.error.flatten().fieldErrors
       })
     }
+    
     // calling the service function changePassword to change the password of the user 
     const response = await changePassword(passwordValidations.data);
 
