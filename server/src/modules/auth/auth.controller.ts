@@ -105,13 +105,13 @@ export async function login(
 
     const logged_user = await loginUser(validationResults.data);
 
-    // const content = `<p> Our system recieve login request from your email address <b> "${logged_user.email}" </b>, if your do that then you can safely ignore this email, In case <mark> if you didn't know about the login activity, </mark> then reset your password or contact to our helpline for help. <br />        <br/> </p>`;
-    // await AuthEmailAlert(
-    //   logged_user.email,
-    //   logged_user.username,
-    //   "Login Alert from RentPe",
-    //   content,
-    // );
+    const content = `<p> Our system recieve login request from your email address <b> "${logged_user.email}" </b>, if your do that then you can safely ignore this email, In case <mark> if you didn't know about the login activity, </mark> then reset your password or contact to our helpline for help. <br />        <br/> </p>`;
+    await AuthEmailAlert(
+      logged_user.email,
+      logged_user.username,
+      "Login Alert from RentPe",
+      content,
+    );
 
     const token: string = logged_user.token;
 
