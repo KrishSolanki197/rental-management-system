@@ -10,7 +10,7 @@ import {
 
 import { 
     authMiddleware 
-} from "../../middlewares/authMiddlewares.js";
+} from "../../middlewares/auth.middlewares.js";
 
 const router = Router();
 

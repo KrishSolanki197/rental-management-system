@@ -252,14 +252,8 @@ export async function changePassword(
         password_hash: true
       }
     });
-
-    
-
+  });
 
 
-
-
-  })
-
-  return "the password are changed";
+  return "hello"
 }
