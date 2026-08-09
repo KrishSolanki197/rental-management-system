@@ -5,7 +5,8 @@ import {
     register, 
     login,
     forget,
-    change
+    change,
+    logout
 } from "./auth.controller.js";
 
 import { 
@@ -18,5 +19,6 @@ router.post("/register", register);
 router.post('/login', login);
 router.post('/forgetPassword', forget);
 router.post('/changePassword', authMiddleware, change);
+router.post('/logout', logout);
 
 export default router;

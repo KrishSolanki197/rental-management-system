@@ -119,6 +119,7 @@ export type loginUserReponse = Omit<users, "user_id" | "password_hash"> & {
 export async function loginUser(input: loginInput): Promise<loginUserReponse> {
   try {
     const { email, password } = input;
+
     const emailExists = await prisma.users.findFirst({
       where: {
         email,
@@ -131,7 +132,7 @@ export async function loginUser(input: loginInput): Promise<loginUserReponse> {
 
     if (emailExists == null) throw new EmailExistance("email does not exists");
 
-    
+
     if(!emailExists.password_hash){
       throw new WrongCrendential("unable to fetch password from the server");
     }
@@ -238,30 +239,29 @@ export async function forgetPassword(
  */
 
 export async function changePassword(
-  passwords: passwordInput,
-): Promise<string> {
+  passwords: passwordInput,  user_id: bigint): Promise<string> {
 
   // getting the passwords 
   const { old_password, new_password } = passwords;
   if(!old_password) throw new PasswordNotFound('Old password is missing');
   if(!new_password) throw new PasswordNotFound('New password is missing');
 
-
   const response = await prisma.$transaction(async (tx)=>{
 
-    // finding the user based on the
+    // finding the user based on the user_id
     const user = await tx.users.findFirst({
       where:{
-        user_id: 1
+        user_id
       },
       select:{
         user_id: true,
         password_hash: true
       }
     })
+
     
     if(user?.password_hash == undefined){
-      throw new PasswordNotFound('unable to fetch the password from the server!');
+      throw new PasswordNotFound(`unable to fetch the password from the server!', ${user?.user_id}, ${user?.password_hash}`);
     }
 
     const match_password:boolean = await bcrypt.compare(old_password, user.password_hash);
@@ -270,7 +270,7 @@ export async function changePassword(
       throw new PasswordNotFound("old password is incorrect");
     }
 
-    const password_hash:string = await bcrypt.hash(old_password, 10);
+    const password_hash:string = await bcrypt.hash(new_password, 10);
 
     await tx.users.update({
       where:{

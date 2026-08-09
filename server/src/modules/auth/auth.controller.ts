@@ -25,7 +25,7 @@ import {
 } from './auth.errors.js';
 
 import { AuthEmailAlert, OTPEmail } from "../../utils/mail.js";
-import { success } from "zod";
+import { success, undefined } from "zod";
 
 // the register fucntion used to define the user into the database
 export async function register(
@@ -93,16 +93,15 @@ export async function login(
   req: Request,
   res: Response,
   next: NextFunction,
-): Promise<Response | void> {
+): Promise<Response> {
   try {
     const validationResults = loginSchema.safeParse(req.body);
     if (!validationResults.success) {
-      res.status(400).json({
+      return res.status(400).json({
         success: false,
         message: "Validation failed",
         errors: validationResults.error.flatten().fieldErrors,
       });
-      return;
     }
 
     const logged_user = await loginUser(validationResults.data);
@@ -131,20 +130,23 @@ export async function login(
 
   } catch (error: unknown) {
     if (error instanceof EmailExistance) {
-      res.status(404).json({
+      return res.status(404).json({
         success: false,
         message: error.message,
       });
     }
 
     if (error instanceof WrongCrendential) {
-      res.status(401).json({
+      return res.status(401).json({
         success: false,
         message: error.message,
       });
     }
 
-    return next(error);
+    return res.status(200).json({
+      success: false,
+      message: 'Server Error or Issues'
+    })
   }
 }
 
@@ -216,9 +218,16 @@ export async function change(
         error: passwordValidations.error.flatten().fieldErrors
       })
     }
+
+
+    if(typeof req.user?.user_id === 'undefined'){
+      throw new Error('UserID is not received from the JWT token');
+    }
     
     // calling the service function changePassword to change the password of the user 
-    const response = await changePassword(passwordValidations.data);
+    const response = await changePassword(
+      passwordValidations.data, BigInt(req.user?.user_id)
+    );
 
     // the function have Response return type
     return res.status(200).json({
@@ -227,10 +236,10 @@ export async function change(
     })
 
 
-  } catch (err) {
+  } catch (err:unknown) {
 
     if(err instanceof PasswordNotFound){
-      res.status(400).json({
+      return res.status(400).json({
         success: false,
         message: err.message
       });
@@ -243,3 +252,10 @@ export async function change(
     });
   }
 }
+
+
+export async function logout(req:Request, res:Response, next: NextFunction){
+  res.cookie('token', null);
+
+  return res.send('okay');
+}1
