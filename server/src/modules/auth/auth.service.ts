@@ -4,6 +4,7 @@ import type {
   loginInput,
   emailInput,
   passwordInput,
+  verifyEmailInput,
 } from "./auth.validation.js";
 import bcrypt from "bcrypt";
 import { generateToken } from "../../utils/token.js";
@@ -16,9 +17,10 @@ import {
   DefaultRoleNotFound,
   WrongCrendential,
   UnableToCreateOTP,
-  PasswordNotFound
+  PasswordNotFound,
+  OTPErrors,
 } from "./auth.errors.js";
-
+import { date } from "zod";
 
 const DEFAULT_ROLE_NAME = "user";
 
@@ -109,6 +111,75 @@ export async function registerUser(
   }
 }
 
+export async function EmailVerify(input: verifyEmailInput): Promise<string> {
+
+  const { email, otp } = input;
+
+  const response = await prisma.$transaction(async (tx) => {
+    const user = await tx.users.findFirst({
+      where: {
+        email,
+      },
+      select: {
+        user_id: true,
+        user_otp: true,
+      },
+    });
+
+    if (user?.user_id === undefined) {
+      throw new UserNotFound();
+    }
+
+    const user_otp = await tx.user_otp.findFirst({
+      where: {
+        user_id: user.user_id,
+      },
+      select: {
+        otp_id: true,
+        otp_code: true,
+        expire_at: true,
+        purpose: true,
+      },
+    });
+
+    // confirm the receive of the user_otp data from the databse
+    if (!user_otp) {
+      throw new OTPErrors("Cannot retrives the OTP", "OTP_RETRIVAL_ISSUE");
+    }
+
+    if(user_otp.purpose !== "email_verification"){
+      throw new OTPErrors("OTP Purpose is wrong", "WRONG_PURPOSE_OTP_RECEIVED");
+    }
+
+    // confirm the code is same as database have
+    if (otp !== user_otp.otp_code) {
+      throw new OTPErrors("OTP is incorrect", "INCORRECT_OTP");
+    }
+
+    // verify that the otp code is expired ?
+    if (user_otp.expire_at < new Date(Date.now())) {
+      throw new OTPErrors("OTP is expired", "OTP_EXPIRED");
+    }
+
+    await tx.users.update({
+      where: {
+        user_id: user.user_id,
+      },
+      data: {
+        email_verified: true,
+      },
+    });
+
+    return user;
+  });
+
+  if(!response){
+    return "Email is not verified"
+  }
+
+  return "Email is verified";
+}
+
 // Omit <Type, Keys> & { New Type of Keys }
 export type loginUserReponse = Omit<users, "user_id" | "password_hash"> & {
   user_id: string | bigint;
@@ -132,12 +203,14 @@ export async function loginUser(input: loginInput): Promise<loginUserReponse> {
 
     if (emailExists == null) throw new EmailExistance("email does not exists");
 
-
-    if(!emailExists.password_hash){
+    if (!emailExists.password_hash) {
       throw new WrongCrendential("unable to fetch password from the server");
     }
 
-    let match_password: boolean = await bcrypt.compare(password, emailExists.password_hash);
+    let match_password: boolean = await bcrypt.compare(
+      password,
+      emailExists.password_hash,
+    );
 
     if (emailExists.password_hash !== null) {
       match_password = await bcrypt.compare(
@@ -238,51 +311,55 @@ export async function forgetPassword(
  * return acknowledement
  */
 export async function changePassword(
-  passwords: passwordInput,  user_id: bigint): Promise<string> {
-
-  // getting the passwords 
+  passwords: passwordInput,
+  user_id: bigint,
+): Promise<string> {
+  // getting the passwords
   const { old_password, new_password } = passwords;
-  if(!old_password) throw new PasswordNotFound('Old password is missing');
-  if(!new_password) throw new PasswordNotFound('New password is missing');
+  if (!old_password) throw new PasswordNotFound("Old password is missing");
+  if (!new_password) throw new PasswordNotFound("New password is missing");
 
-  const response = await prisma.$transaction(async (tx)=>{
-
+  const response = await prisma.$transaction(async (tx) => {
     // finding the user based on the user_id
     const user = await tx.users.findFirst({
-      where:{
-        user_id
+      where: {
+        user_id,
       },
-      select:{
+      select: {
         user_id: true,
-        password_hash: true
-      }
-    })
+        password_hash: true,
+      },
+    });
 
-    
-    if(user?.password_hash == undefined){
-      throw new PasswordNotFound(`unable to fetch the password from the server!', ${user?.user_id}, ${user?.password_hash}`);
+    if (user?.password_hash == undefined) {
+      throw new PasswordNotFound(
+        `unable to fetch the password from the server!', ${user?.user_id}, ${user?.password_hash}`,
+      );
     }
 
-    const match_password:boolean = await bcrypt.compare(old_password, user.password_hash);
+    const match_password: boolean = await bcrypt.compare(
+      old_password,
+      user.password_hash,
+    );
 
-    if(!match_password){
+    if (!match_password) {
       throw new PasswordNotFound("old password is incorrect");
     }
 
-    const password_hash:string = await bcrypt.hash(new_password, 10);
+    const password_hash: string = await bcrypt.hash(new_password, 10);
 
     await tx.users.update({
-      where:{
-        user_id: user.user_id
+      where: {
+        user_id: user.user_id,
       },
-      data:{
-        password_hash
-      }
+      data: {
+        password_hash,
+      },
     });
     return user;
   });
 
-  if(response.user_id === undefined){
+  if (response.user_id === undefined) {
     return "password is not changed";
   }
 

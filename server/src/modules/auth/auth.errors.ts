@@ -59,3 +59,10 @@ export class JWTNotFound extends Error{
     this.name = "JWTNotFound";
   }
 }
+
+export class OTPErrors extends Error {
+  constructor(message: string = "OTP not valid", name:string = "INVALID_OTP"){
+    super(message);
+    this.name = name;
+  }
+}

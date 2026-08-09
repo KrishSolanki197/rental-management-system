@@ -3,6 +3,7 @@
 import { Router } from "express";
 import { 
     register, 
+    emailVerification,
     login,
     forget,
     change,
@@ -18,7 +19,9 @@ const router = Router();
 router.post("/register", register);
 router.post('/login', login);
 router.post('/forgetPassword', forget);
-router.post('/changePassword', authMiddleware, change);
+router.post("/verifyEmail", emailVerification);
 router.post('/logout', logout);
+
+router.post('/changePassword', authMiddleware, change);
 
 export default router;
