@@ -5,13 +5,15 @@ import {
   loginSchema,
   emailValidation,
   passwordSchema,
+  verifyEmail,
 } from "./auth.validation.js";
 
 import {
   registerUser,
   loginUser,
   forgetPassword,
-  changePassword
+  changePassword,
+  EmailVerify,
 } from "./auth.service.js";
 
 import {
@@ -21,11 +23,10 @@ import {
   DefaultRoleNotFound,
   WrongCrendential,
   UnableToCreateOTP,
-  PasswordNotFound
-} from './auth.errors.js';
+  PasswordNotFound,
+} from "./auth.errors.js";
 
 import { AuthEmailAlert, OTPEmail } from "../../utils/mail.js";
-import { success, undefined } from "zod";
 
 // the register fucntion used to define the user into the database
 export async function register(
@@ -88,6 +89,38 @@ export async function register(
   }
 }
 
+/* the function used to verify the email address of the users of the system for verify that the email is authentication,
+and No one can use other email directly on system 
+and system does not blindly trust to the that email without verify it */
+export async function emailVerification(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const validation = verifyEmail.safeParse(req.body);
+
+    if (!validation.success) {
+      res.status(400).json({
+        success: false,
+        message: validation.error.flatten().fieldErrors,
+      });
+      return;
+    }
+    const response = await EmailVerify(validation.data);
+
+    res.status(200).json({
+      success: true,
+      message: response
+    })
+
+  } catch (error: unknown) {
+    res.status(400).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+}
 
 // the login function is used retrive user info only if when the user enter correct credential with the user
 export async function login(
@@ -128,7 +161,6 @@ export async function login(
       message: "login successfully",
       data: logged_user,
     });
-
   } catch (error: unknown) {
     if (error instanceof EmailExistance) {
       return res.status(404).json({
@@ -146,8 +178,8 @@ export async function login(
 
     return res.status(200).json({
       success: false,
-      message: 'Server Error or Issues'
-    })
+      message: "Server Error or Issues",
+    });
   }
 }
 
@@ -208,41 +240,37 @@ export async function change(
   next: NextFunction,
 ): Promise<Response> {
   try {
-
     // received the data req.body
     const passwordValidations = passwordSchema.safeParse(req.body);
 
-    if(!passwordValidations.success){
+    if (!passwordValidations.success) {
       return res.status(400).json({
         success: false,
         message: "Validation failed",
-        error: passwordValidations.error.flatten().fieldErrors
-      })
+        error: passwordValidations.error.flatten().fieldErrors,
+      });
     }
 
-
-    if(typeof req.user?.user_id === 'undefined'){
-      throw new Error('UserID is not received from the JWT token');
+    if (typeof req.user?.user_id === "undefined") {
+      throw new Error("UserID is not received from the JWT token");
     }
-    
-    // calling the service function changePassword to change the password of the user 
+
+    // calling the service function changePassword to change the password of the user
     const response = await changePassword(
-      passwordValidations.data, BigInt(req.user?.user_id)
+      passwordValidations.data,
+      BigInt(req.user?.user_id),
     );
 
     // the function have Response return type
     return res.status(200).json({
       success: true,
-      message: response
-    })
-
-
-  } catch (err:unknown) {
-
-    if(err instanceof PasswordNotFound){
+      message: response,
+    });
+  } catch (err: unknown) {
+    if (err instanceof PasswordNotFound) {
       return res.status(400).json({
         success: false,
-        message: err.message
+        message: err.message,
       });
     }
 
@@ -255,8 +283,9 @@ export async function change(
 }
 
 // logout function of the system
-export async function logout(req:Request, res:Response, next: NextFunction){
-  res.cookie('token', null);
+export async function logout(req: Request, res: Response, next: NextFunction) {
+  res.cookie("token", null);
 
-  return res.send('okay');
-}1
+  return res.send("okay");
+}
+1;
