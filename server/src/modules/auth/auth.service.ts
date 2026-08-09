@@ -18,6 +18,7 @@ import {
   UnableToCreateOTP,
   PasswordNotFound
 } from "./auth.errors.js";
+import { match } from "node:assert";
 
 const DEFAULT_ROLE_NAME = "user";
 
@@ -130,7 +131,13 @@ export async function loginUser(input: loginInput): Promise<loginUserReponse> {
 
     if (emailExists == null) throw new EmailExistance("email does not exists");
 
-    let match_password: boolean = false;
+    
+    if(!emailExists.password_hash){
+      throw new WrongCrendential("unable to fetch password from the server");
+    }
+
+    let match_password: boolean = await bcrypt.compare(password, emailExists.password_hash);
+
     if (emailExists.password_hash !== null) {
       match_password = await bcrypt.compare(
         password,
@@ -239,7 +246,7 @@ export async function changePassword(
   if(!old_password) throw new PasswordNotFound('Old password is missing');
   if(!new_password) throw new PasswordNotFound('New password is missing');
 
-  const old_password_hash = await bcrypt.hash(old_password, 10);
+
   const response = await prisma.$transaction(async (tx)=>{
 
     // finding the user based on the
@@ -251,9 +258,34 @@ export async function changePassword(
         user_id: true,
         password_hash: true
       }
+    })
+    
+    if(user?.password_hash == undefined){
+      throw new PasswordNotFound('unable to fetch the password from the server!');
+    }
+
+    const match_password:boolean = await bcrypt.compare(old_password, user.password_hash);
+
+    if(!match_password){
+      throw new PasswordNotFound("old password is incorrect");
+    }
+
+    const password_hash:string = await bcrypt.hash(old_password, 10);
+
+    await tx.users.update({
+      where:{
+        user_id: user.user_id
+      },
+      data:{
+        password_hash
+      }
     });
+    return user;
   });
 
+  if(response.user_id === undefined){
+    return "password is not changed";
+  }
 
-  return "hello"
+  return "password are changed";
 }
