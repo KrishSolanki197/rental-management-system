@@ -88,6 +88,7 @@ export async function register(
   }
 }
 
+
 // the login function is used retrive user info only if when the user enter correct credential with the user
 export async function login(
   req: Request,
@@ -253,7 +254,7 @@ export async function change(
   }
 }
 
-
+// logout function of the system
 export async function logout(req:Request, res:Response, next: NextFunction){
   res.cookie('token', null);
 
