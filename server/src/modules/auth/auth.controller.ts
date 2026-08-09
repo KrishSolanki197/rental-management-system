@@ -20,10 +20,12 @@ import {
   EmailExistance,
   DefaultRoleNotFound,
   WrongCrendential,
-  UnableToCreateOTP
+  UnableToCreateOTP,
+  PasswordNotFound
 } from './auth.errors.js';
 
 import { AuthEmailAlert, OTPEmail } from "../../utils/mail.js";
+import { success } from "zod";
 
 // the register fucntion used to define the user into the database
 export async function register(
@@ -226,6 +228,14 @@ export async function change(
 
 
   } catch (err) {
+
+    if(err instanceof PasswordNotFound){
+      res.status(400).json({
+        success: false,
+        message: err.message
+      });
+    }
+
     // Handle thrown Error by the Service layers
     return res.status(400).json({
       success: false,

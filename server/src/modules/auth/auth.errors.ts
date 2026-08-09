@@ -1,4 +1,8 @@
 
+
+// @harminvp00
+// Note: need to seperate the error class for server and client error, still okay but must be in future
+
 export class UserNameAlreadyExist extends Error {
   constructor() {
     super("Username is already exists");
@@ -28,8 +32,8 @@ export class DefaultRoleNotFound extends Error {
 }
 
 export class WrongCrendential extends Error {
-  constructor() {
-    super("incorrect password");
+  constructor(message = "Incorrect password") {
+    super(message);
     this.name = "WrongCrendential";
   }
 }
