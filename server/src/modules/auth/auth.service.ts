@@ -18,7 +18,7 @@ import {
   UnableToCreateOTP,
   PasswordNotFound
 } from "./auth.errors.js";
-import { match } from "node:assert";
+
 
 const DEFAULT_ROLE_NAME = "user";
 
@@ -237,7 +237,6 @@ export async function forgetPassword(
  * if old password is correct set new_password's hash as current password
  * return acknowledement
  */
-
 export async function changePassword(
   passwords: passwordInput,  user_id: bigint): Promise<string> {
 

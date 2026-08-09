@@ -1,6 +1,4 @@
-
-
-import { z } from 'zod';
+import { z } from "zod";
 
 // Regex explanations kept close to the rule they enforce, for learning purposes.
 const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/; // letters, numbers, underscore only
@@ -8,82 +6,139 @@ const PASSWORD_UPPERCASE_REGEX = /[A-Z]/;
 const PASSWORD_LOWERCASE_REGEX = /[a-z]/;
 const PASSWORD_NUMBER_REGEX = /[0-9]/;
 const PASSWORD_SPECIAL_CHAR_REGEX = /[^A-Za-z0-9]/;
-
+const OTP_REGEX = /[0-9]{6}/;
 
 export const registrationUser = z.object({
-    username: z
-        .string("username is invalid")
-        .min(6, "Username must be contain at least 3 characters")
-        .max(12, "Username must be contain at most 20 characters")
-        .regex(USERNAME_REGEX, "Username can contain only letters, numbers and underscores"),
+  username: z
+    .string("username is invalid")
+    .min(6, "Username must be contain at least 3 characters")
+    .max(12, "Username must be contain at most 20 characters")
+    .regex(
+      USERNAME_REGEX,
+      "Username can contain only letters, numbers and underscores",
+    ),
 
-    email: z
-        .string("email is invalid")
-        .email("invalid email address"),
-
-    password: z
-        .string('password is invalid')
-        .min(8, 'password should be atleast 8 characters')
-        .regex(PASSWORD_LOWERCASE_REGEX, 'password must contain atleast one lowercase letter')
-        .regex(PASSWORD_UPPERCASE_REGEX, 'password must contain atleast one uppercase letter')
-        .regex(PASSWORD_NUMBER_REGEX, 'password must contain atleast one number')
-        .regex(PASSWORD_SPECIAL_CHAR_REGEX, 'password must contain atleast one special character'),
-
-    first_name: z
-        .string('first name is invalid')
-        .min(3, 'first name is required')
-        .max(20, 'first name is too long'),
-    
-    last_name: z
-        .string("last name is invalid")
-        .min(3, 'last name is required')
-        .max(20, 'lsdt name is too long'),
-})
- 
-export const loginSchema = z.object({
-    email: z
-        .string("email is invalid")
-        .email("invalid email address"),
-    
-    password: z
-        .string('password is invalid')
-        .min(8, 'password should be atleast 8 characters')
-        .regex(PASSWORD_LOWERCASE_REGEX, 'password must contain atleast one lowercase letter')
-        .regex(PASSWORD_UPPERCASE_REGEX, 'password must contain atleast one uppercase letter')
-        .regex(PASSWORD_NUMBER_REGEX, 'password must contain atleast one number')
-        .regex(PASSWORD_SPECIAL_CHAR_REGEX, 'password must contain atleast one special character'),
-})
-
-
-export const emailValidation = z
-    .string()
+  email: z
+    .string("Email is invalid")
     .trim()
     .email()
-    .transform((email)=> email.toLowerCase())
+    .transform((val) => val.toLowerCase()),
 
-export const passwordSchema = z.object({
-    old_password: z
-        .string('password is invalid')
-        .min(8, 'password should be atleast 8 characters')
-        .regex(PASSWORD_LOWERCASE_REGEX, 'password must contain atleast one lowercase letter')
-        .regex(PASSWORD_UPPERCASE_REGEX, 'password must contain atleast one uppercase letter')
-        .regex(PASSWORD_NUMBER_REGEX, 'password must contain atleast one number')
-        .regex(PASSWORD_SPECIAL_CHAR_REGEX, 'password must contain atleast one special character'),
+  password: z
+    .string("password is invalid")
+    .min(8, "password should be atleast 8 characters")
+    .regex(
+      PASSWORD_LOWERCASE_REGEX,
+      "password must contain atleast one lowercase letter",
+    )
+    .regex(
+      PASSWORD_UPPERCASE_REGEX,
+      "password must contain atleast one uppercase letter",
+    )
+    .regex(PASSWORD_NUMBER_REGEX, "password must contain atleast one number")
+    .regex(
+      PASSWORD_SPECIAL_CHAR_REGEX,
+      "password must contain atleast one special character",
+    ),
 
-    new_password: z
-        .string('password is invalid')
-        .min(8, 'password should be atleast 8 characters')
-        .regex(PASSWORD_LOWERCASE_REGEX, 'password must contain atleast one lowercase letter')
-        .regex(PASSWORD_UPPERCASE_REGEX, 'password must contain atleast one uppercase letter')
-        .regex(PASSWORD_NUMBER_REGEX, 'password must contain atleast one number')
-        .regex(PASSWORD_SPECIAL_CHAR_REGEX, 'password must contain atleast one special character'),
-}).refine((data)=> data.old_password !== data.new_password, {
-    message: "new password must be diffrent from the old password",
-    path: ['new_password']
+  first_name: z
+    .string("first name is invalid")
+    .min(3, "first name is required")
+    .max(20, "first name is too long"),
+
+  last_name: z
+    .string("last name is invalid")
+    .min(3, "last name is required")
+    .max(20, "lsdt name is too long"),
 });
 
+export const loginSchema = z.object({
+  email: z
+    .string("Email is invalid")
+    .trim()
+    .email()
+    .transform((val) => val.toLowerCase()),
+
+  password: z
+    .string("password is invalid")
+    .min(8, "password should be atleast 8 characters")
+    .regex(
+      PASSWORD_LOWERCASE_REGEX,
+      "password must contain atleast one lowercase letter",
+    )
+    .regex(
+      PASSWORD_UPPERCASE_REGEX,
+      "password must contain atleast one uppercase letter",
+    )
+    .regex(PASSWORD_NUMBER_REGEX, "password must contain atleast one number")
+    .regex(
+      PASSWORD_SPECIAL_CHAR_REGEX,
+      "password must contain atleast one special character",
+    ),
+});
+
+export const emailValidation = z
+  .string()
+  .trim()
+  .email()
+  .transform((email) => email.toLowerCase());
+
+export const passwordSchema = z
+  .object({
+    old_password: z
+      .string("password is invalid")
+      .min(8, "password should be atleast 8 characters")
+      .regex(
+        PASSWORD_LOWERCASE_REGEX,
+        "password must contain atleast one lowercase letter",
+      )
+      .regex(
+        PASSWORD_UPPERCASE_REGEX,
+        "password must contain atleast one uppercase letter",
+      )
+      .regex(PASSWORD_NUMBER_REGEX, "password must contain atleast one number")
+      .regex(
+        PASSWORD_SPECIAL_CHAR_REGEX,
+        "password must contain atleast one special character",
+      ),
+
+    new_password: z
+      .string("password is invalid")
+      .min(8, "password should be atleast 8 characters")
+      .regex(
+        PASSWORD_LOWERCASE_REGEX,
+        "password must contain atleast one lowercase letter",
+      )
+      .regex(
+        PASSWORD_UPPERCASE_REGEX,
+        "password must contain atleast one uppercase letter",
+      )
+      .regex(PASSWORD_NUMBER_REGEX, "password must contain atleast one number")
+      .regex(
+        PASSWORD_SPECIAL_CHAR_REGEX,
+        "password must contain atleast one special character",
+      ),
+  })
+  .refine((data) => data.old_password !== data.new_password, {
+    message: "new password must be diffrent from the old password",
+    path: ["new_password"],
+  });
+
+export const verifyEmail = z.object({
+  email: z
+    .string("Email is invalid")
+    .trim()
+    .email()
+    .transform((val) => val.toLowerCase()),
+
+  otp: z
+    .string("must be a string")
+    .length(6, "OTP must be of length 6")
+    .regex(OTP_REGEX, "otp is invalid"),
+});
 
 export type RegisterInput = z.infer<typeof registrationUser>;
 export type loginInput = z.infer<typeof loginSchema>;
-export type emailInput = z.infer<typeof emailValidation>
+export type emailInput = z.infer<typeof emailValidation>;
 export type passwordInput = z.infer<typeof passwordSchema>;
+export type verifyEmailInput = z.infer<typeof verifyEmail>;
