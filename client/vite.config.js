@@ -7,4 +7,7 @@ export default defineConfig({
   plugins: [react(),
       tailwindcss(),
   ],
+  server: {
+    host: '127.0.0.1', // Forces Vite to use 127.0.0.1 instead of localhost
+  },
 })
