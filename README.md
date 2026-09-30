@@ -72,19 +72,6 @@ if you feel any difficulty to setup this project you can contact developers
 | Krish Solanki | ec2022.kirtansolanki@gmail.com | @kakashi197 | Frontend
 | Harmin Vekariya | vekariyaharmin96@gmail.com | @harminvp00 | Backend
 
-
----
-
-## Contributing
-
-Contributions are welcome.
-
-1. Fork the repository.
-2. Create a new feature branch.
-3. Commit your changes.
-4. Push the branch.
-5. Open a Pull Request.
-
 ---
 
 ## License
